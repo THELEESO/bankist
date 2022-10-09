@@ -144,7 +144,7 @@ btnLogin.addEventListener('click', e => {
   }
 
   inputLoginUsername.value = inputLoginPin.value = '';
-  const userRate = activeAccount.interestRate;
+  inputLoginPin.blur();
   updateUI(activeAccount);
 });
 
@@ -165,5 +165,51 @@ btnTransfer.addEventListener('click', e => {
     updateUI(activeAccount);
   } else {
     alert('Invalid.');
+  }
+  inputTransferTo.value = inputTransferAmount.value = '';
+  inputTransferAmount.blur();
+});
+
+// Loan UI
+
+btnLoan.addEventListener('click', e => {
+  e.preventDefault();
+  if (
+    activeAccount.movements.some(mov => mov > 0) &&
+    Number(inputLoanAmount.value) <= activeAccount.balance * 0.1 &&
+    !activeAccount.loan
+  ) {
+    const loan = +inputLoanAmount.value;
+    activeAccount.movements.push(loan);
+    updateUI(activeAccount);
+    activeAccount.loan = true;
+    inputLoanAmount.value = '';
+    inputLoanAmount.blur();
+    alert('Loan is saving to your account.');
+  } else {
+    alert("You can't loan that much!");
+  }
+});
+
+// close Account UI
+btnClose.addEventListener('click', e => {
+  e.preventDefault();
+  if (
+    inputCloseUsername.value === activeAccount.userName &&
+    Number(inputClosePin.value) === activeAccount.pin
+  ) {
+    const index = accounts.findIndex(
+      acc => acc.userName === activeAccount.userName
+    );
+
+    // delete from array
+    accounts.splice(index, 1);
+    alert('Account Closed.');
+
+    // close UI
+    containerApp.style.opacity = 0;
+    inputCloseUsername.value = inputClosePin.value = '';
+    inputClosePin.blur();
+    labelWelcome.textContent = `Log in to get started`;
   }
 });
