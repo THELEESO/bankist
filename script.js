@@ -81,9 +81,11 @@ const calcBalance = function (account) {
 };
 
 // show movement in right side
-const displayMovements = function (movements) {
+const displayMovements = function (movements, sort = false) {
+  const moves = sort ? movements.slice().sort((a, b) => a - b) : movements;
+
   containerMovements.innerHTML = ''; // clean board
-  movements.forEach((move, i) => {
+  moves.forEach((move, i) => {
     const type = move < 0 ? 'withdrawal' : 'deposit';
     const html = `
     <div class="movements__row">
@@ -174,15 +176,19 @@ btnTransfer.addEventListener('click', e => {
 
 btnLoan.addEventListener('click', e => {
   e.preventDefault();
+  const amount = Number(inputLoanAmount.value);
   if (
-    activeAccount.movements.some(mov => mov > 0) &&
-    Number(inputLoanAmount.value) <= activeAccount.balance * 0.1 &&
+    activeAccount.movements.some(mov => mov >= amount * 0.1) &&
+    amount > 0 &&
     !activeAccount.loan
   ) {
-    const loan = +inputLoanAmount.value;
-    activeAccount.movements.push(loan);
+    activeAccount.movements.push(amount);
+
     updateUI(activeAccount);
+
+    // loan condition
     activeAccount.loan = true;
+
     inputLoanAmount.value = '';
     inputLoanAmount.blur();
     alert('Loan is saving to your account.');
@@ -212,4 +218,12 @@ btnClose.addEventListener('click', e => {
     inputClosePin.blur();
     labelWelcome.textContent = `Log in to get started`;
   }
+});
+
+// sort UI
+let sorted = false;
+btnSort.addEventListener('click', e => {
+  e.preventDefault();
+  displayMovements(activeAccount.movements, !sorted);
+  sorted = !sorted;
 });
