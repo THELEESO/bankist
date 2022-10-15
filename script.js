@@ -8,14 +8,14 @@ const account1 = {
   pin: 1111,
 
   movementsDates: [
-    '2019-11-18T21:31:17.178Z',
-    '2019-12-23T07:42:02.383Z',
-    '2020-01-28T09:15:04.904Z',
-    '2020-04-01T10:17:24.185Z',
-    '2020-05-08T14:11:59.604Z',
-    '2020-05-27T17:01:17.194Z',
-    '2020-07-11T23:36:17.929Z',
-    '2020-07-12T10:51:36.790Z',
+    '2021-11-18T21:31:17.178Z',
+    '2021-12-23T07:42:02.383Z',
+    '2022-06-28T09:15:04.904Z',
+    '2022-07-01T10:17:24.185Z',
+    '2022-08-08T14:11:59.604Z',
+    '2022-09-27T17:01:17.194Z',
+    '2022-10-11T23:36:17.929Z',
+    '2022-10-14T10:51:36.790Z',
   ],
   currency: 'EUR',
   locale: 'pt-PT', // de-DE
@@ -28,14 +28,14 @@ const account2 = {
   pin: 2222,
 
   movementsDates: [
-    '2019-11-01T13:15:33.035Z',
-    '2019-11-30T09:48:16.867Z',
-    '2019-12-25T06:04:23.907Z',
-    '2020-01-25T14:18:46.235Z',
-    '2020-02-05T16:33:06.386Z',
-    '2020-04-10T14:43:26.374Z',
-    '2020-06-25T18:49:59.371Z',
-    '2020-07-26T12:01:20.894Z',
+    '2021-11-01T13:15:33.035Z',
+    '2021-11-30T09:48:16.867Z',
+    '2021-12-25T06:04:23.907Z',
+    '2022-05-25T14:18:46.235Z',
+    '2022-06-05T16:33:06.386Z',
+    '2022-07-10T14:43:26.374Z',
+    '2022-08-25T18:49:59.371Z',
+    '2022-09-26T12:01:20.894Z',
   ],
   currency: 'USD',
   locale: 'en-US',
@@ -84,95 +84,32 @@ createUserName(accounts);
 
 // show balance
 const calcBalance = function (account) {
-  const balance = account.movements.reduce(
+  account.balance = account.movements.reduce(
     (acc, value, i, arr) => acc + value,
     0
   );
-  account.balance = balance;
-  labelBalance.textContent = balance + '€';
+
+  labelBalance.textContent = formatMov(account, account.balance);
 };
 
 // date setting
+
 const today = new Date().toISOString();
 
-const displayDate = function (date) {
-  date = new Date(date);
-  const day = `${date.getDate()}`.padStart(2, 0);
-  const month = `${date.getMonth() + 1}`.padStart(2, 0);
-  const year = date.getFullYear();
-  const hour = `${date.getHours()}`.padStart(2, 0);
-  const min = `${date.getMinutes()}`.padStart(2, 0);
+const displayDate = function (movdate, locale) {
+  const calcDayPass = date =>
+    Math.round(Math.abs((Date.now() - date) / (1000 * 60 * 60 * 24)));
+  const date = new Date(movdate);
+  const countDays = calcDayPass(date);
 
-  return `${day}/${month}/${year}, ${hour}:${min}`;
-};
-
-// show movement in right side
-const displayMovements = function (account, sort = false) {
-  // make date connect to movement
-  const moveAndDate = account.movements.map((mov, i) => [
-    mov,
-    account.movementsDates[i],
-  ]);
-  const moves = sort
-    ? account.movements.slice().sort((a, b) => a - b)
-    : account.movements;
-
-  containerMovements.innerHTML = ''; // clean board
-  moves.forEach((move, i) => {
-    // use find() to find which one to connect
-    const date = sort
-      ? moveAndDate.find(mov => mov[0] === move)[1]
-      : account.movementsDates[i];
-    // display date with movement
-    const movDate = displayDate(date);
-
-    const type = move < 0 ? 'withdrawal' : 'deposit';
-
-    // create new html to index.html
-    const html = `
-    <div class="movements__row">
-      <div class="movements__type movements__type--${type}">${
-      i + 1
-    } ${type}</div>
-    <div class="movements__date">${movDate}</div>
-      <div class="movements__value">${move.toFixed(2)}€</div>
-    </div>`;
-    containerMovements.insertAdjacentHTML('afterbegin', html);
-  });
-};
-
-// footer display
-const displaySummary = function (account) {
-  const income = account.movements
-    .filter(move => move > 0)
-    .reduce((acc, move) => acc + move, 0);
-  labelSumIn.textContent = `${income.toFixed(2)}€`;
-
-  const outcome = Math.abs(
-    account.movements
-      .filter(move => move < 0)
-      .reduce((acc, move) => acc + move, 0)
-  );
-  labelSumOut.textContent = `${outcome.toFixed(2)}€`;
-
-  const interest = account.movements
-    .filter(move => move > 0)
-    .map(move => (move * account.interestRate) / 100)
-    .filter(move => move > 1)
-    .reduce((acc, move) => acc + move, 0);
-  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
-};
-
-// update UI
-const updateUI = function (acc) {
-  calcBalance(acc);
-  displayMovements(acc);
-  displaySummary(acc);
-  // login time
-  labelDate.textContent = displayDate(today);
+  if (countDays === 0) return `Today`;
+  if (countDays === 1) return 'Yesterday';
+  if (countDays <= 7 && countDays > 1) return `${countDays} days ago`;
+  return Intl.DateTimeFormat(locale).format(date);
 };
 
 // login UI
+
 let activeAccount;
 btnLogin.addEventListener('click', e => {
   e.preventDefault();
@@ -188,8 +125,95 @@ btnLogin.addEventListener('click', e => {
 
   inputLoginUsername.value = inputLoginPin.value = '';
   inputLoginPin.blur();
+
+  // Internationalization API (Intl)
+  const option = {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  };
+
+  labelDate.textContent = Intl.DateTimeFormat(
+    activeAccount.locale,
+    option
+  ).format(Date.now());
+
   updateUI(activeAccount);
 });
+
+// format movements' number
+const formatMov = function (account, mov) {
+  return Intl.NumberFormat(account.locale, {
+    style: 'currency',
+    currency: account.currency,
+  }).format(mov);
+};
+
+// show movement in left side
+const displayMovements = function (account, sort = false) {
+  // make date connect to movement (for sorting)
+  const moveAndDate = account.movements.map((mov, i) => [
+    mov,
+    account.movementsDates[i],
+  ]);
+  const moves = sort
+    ? account.movements.slice().sort((a, b) => a - b)
+    : account.movements;
+
+  containerMovements.innerHTML = ''; // clean board
+  moves.forEach((move, i) => {
+    const type = move < 0 ? 'withdrawal' : 'deposit';
+    // use find() to find which one to connect
+    const date = moveAndDate.find(mov => mov[0] === move)[1];
+    // display date with movement
+    const movDate = displayDate(date, account.locale);
+    const currency = formatMov(account, move);
+
+    // create new html to index.html
+    const html = `
+    <div class="movements__row">
+      <div class="movements__type movements__type--${type}">${
+      i + 1
+    } ${type}</div>
+    <div class="movements__date">${movDate}</div>
+      <div class="movements__value">${currency}</div>
+    </div>`;
+    containerMovements.insertAdjacentHTML('afterbegin', html);
+  });
+};
+
+// footer display
+const displaySummary = function (account) {
+  const income = account.movements
+    .filter(move => move > 0)
+    .reduce((acc, move) => acc + move, 0);
+  labelSumIn.textContent = formatMov(account, income);
+
+  const outcome = Math.abs(
+    account.movements
+      .filter(move => move < 0)
+      .reduce((acc, move) => acc + move, 0)
+  );
+  labelSumOut.textContent = formatMov(account, outcome);
+
+  const interest = account.movements
+    .filter(move => move > 0)
+    .map(move => (move * account.interestRate) / 100)
+    .filter(move => move > 1)
+    .reduce((acc, move) => acc + move, 0);
+  labelSumInterest.textContent = formatMov(account, interest);
+};
+
+// update UI
+const updateUI = function (acc) {
+  calcBalance(acc);
+  displayMovements(acc);
+  displaySummary(acc);
+  // login time
+};
 
 // transfer UI
 btnTransfer.addEventListener('click', e => {
