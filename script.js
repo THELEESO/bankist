@@ -108,42 +108,6 @@ const displayDate = function (movdate, locale) {
   return Intl.DateTimeFormat(locale).format(date);
 };
 
-// login UI
-
-let activeAccount;
-btnLogin.addEventListener('click', e => {
-  e.preventDefault();
-  activeAccount = accounts.find(
-    acc => acc.userName === inputLoginUsername.value
-  );
-  if (activeAccount?.pin === Number(inputLoginPin.value)) {
-    labelWelcome.textContent = `Welcome back! ${
-      activeAccount.owner.split(' ')[0]
-    }`;
-    containerApp.style.opacity = 100;
-  }
-
-  inputLoginUsername.value = inputLoginPin.value = '';
-  inputLoginPin.blur();
-
-  // Internationalization API (Intl)
-  const option = {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-  };
-
-  labelDate.textContent = Intl.DateTimeFormat(
-    activeAccount.locale,
-    option
-  ).format(Date.now());
-
-  updateUI(activeAccount);
-});
-
 // format movements' number
 const formatMov = function (account, mov) {
   return Intl.NumberFormat(account.locale, {
@@ -212,8 +176,71 @@ const updateUI = function (acc) {
   calcBalance(acc);
   displayMovements(acc);
   displaySummary(acc);
-  // login time
 };
+
+// timer UI
+const logoutTimer = function () {
+  let time = 300;
+  const tick = () => {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
+    labelTimer.textContent = `${min}:${sec}`;
+
+    if (time === 0) {
+      clearInterval(timer);
+      // clean UI
+      containerApp.style.opacity = 0;
+      labelWelcome.textContent = `Log in to get started`;
+      time = 10;
+    }
+
+    time--;
+  };
+
+  tick();
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
+
+// login UI
+let activeAccount, timer;
+btnLogin.addEventListener('click', e => {
+  e.preventDefault();
+  activeAccount = accounts.find(
+    acc => acc.userName === inputLoginUsername.value
+  );
+  if (activeAccount?.pin === Number(inputLoginPin.value)) {
+    labelWelcome.textContent = `Welcome back! ${
+      activeAccount.owner.split(' ')[0]
+    }`;
+    containerApp.style.opacity = 100;
+  }
+
+  inputLoginUsername.value = inputLoginPin.value = '';
+  inputLoginPin.blur();
+
+  // Internationalization API (Intl)
+  const option = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    weekday: 'short',
+  };
+  // live clock
+  setInterval(() => {
+    labelDate.textContent = Intl.DateTimeFormat(
+      activeAccount.locale,
+      option
+    ).format(Date.now());
+  }, 1000);
+
+  updateUI(activeAccount);
+  if (timer) clearInterval(timer);
+  timer = logoutTimer();
+});
 
 // transfer UI
 btnTransfer.addEventListener('click', e => {
@@ -241,6 +268,10 @@ btnTransfer.addEventListener('click', e => {
   }
   inputTransferTo.value = inputTransferAmount.value = '';
   inputTransferAmount.blur();
+
+  // reset timer
+  clearInterval(timer);
+  timer = logoutTimer();
 });
 
 // Loan UI
@@ -252,21 +283,28 @@ btnLoan.addEventListener('click', e => {
     amount > 0 &&
     !activeAccount.loan
   ) {
-    // active user changing
-    activeAccount.movements.push(amount);
-    activeAccount.movementsDates.push(today);
+    // more realistic for execution time
+    setTimeout(() => {
+      // active user changing
+      activeAccount.movements.push(amount);
+      activeAccount.movementsDates.push(today);
 
-    updateUI(activeAccount);
+      updateUI(activeAccount);
+      alert('Loan is saving to your account.');
+    }, 3000);
 
     // loan condition
     activeAccount.loan = true;
 
     inputLoanAmount.value = '';
     inputLoanAmount.blur();
-    alert('Loan is saving to your account.');
   } else {
     alert("You can't loan that much!");
   }
+
+  // reset timer
+  clearInterval(timer);
+  timer = logoutTimer();
 });
 
 // close Account UI
@@ -284,7 +322,7 @@ btnClose.addEventListener('click', e => {
     accounts.splice(index, 1);
     alert('Account Closed.');
 
-    // close UI
+    // clean UI
     containerApp.style.opacity = 0;
     inputCloseUsername.value = inputClosePin.value = '';
     inputClosePin.blur();
