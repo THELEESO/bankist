@@ -7,4 +7,4 @@
 - js, PWD: 1111
 - jd, PWD: 2222
 
-### [Bankisk](https://bankist4website.netlify.app/)
+### [Bankist](https://bankist4website.netlify.app/)
